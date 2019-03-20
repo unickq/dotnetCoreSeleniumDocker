@@ -1,0 +1,30 @@
+version: '3'
+services:
+  selenoid:
+    image: "aerokube/selenoid"
+    network_mode: bridge
+    command: "-limit 20 -timeout 5m0s"
+    ports:
+      - "4444:4444"
+    volumes:
+      - "./docker/selenoid:/etc/selenoid/"
+      - "//var/run/docker.sock:/var/run/docker.sock"
+  selenium-tests:
+    image: mcr.microsoft.com/dotnet/core/sdk:2.2
+    network_mode: bridge
+    links:
+      - selenoid:selenoid
+    volumes:
+      - ./tests:/code
+    environment:
+     - ALLURE_CONFIG=/code/allureConfig.json
+    command: "dotnet test /code/tests.csproj"
+  allure:
+    image: "frankescobar/allure-docker-service"
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 1
+    ports:
+      - "4040:4040"
+      - "5050:5050"
+    volumes:
+      - ./tests/bin/Debug/netcoreapp2.1/allure-results:/app/allure-results
